@@ -121,7 +121,7 @@ int dirTree(const char *pathname, const struct stat *sbuf, int type, struct FTW 
     // Check if the current directory's path matches the parent directory's path
     if (parent_path && strncmp(parent_path, pathname, ftwb->base) == 0) {
         for (int i = 0; i < (ftwb->level) - 1; i++) {
-            printf("    ");
+            printf("|    ");
         }
         printf("|____");
     } else {
