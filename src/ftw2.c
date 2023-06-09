@@ -17,39 +17,41 @@
 #include <errno.h>        /* Declares errno and defines error constants */
 #include <string.h>       /* Commonly used string-handling functions */
 
-static int              /* Callback function called by ftw() */
-dirTree(const char *pathname, const struct stat *sbuf, int type, struct FTW *ftwb)
+static int dirTree(const char *pathname, const struct stat *sbuf, int type, struct FTW *ftwb)
 {
+    char fileMod = '-';
     if (type == FTW_NS) {                  /* Could not stat() file */
         printf("?");
     } else {
         switch (sbuf->st_mode & S_IFMT) {  /* Print file type */
-        case S_IFREG:  printf("-"); break;
-        case S_IFDIR:  printf("d"); break;
-        case S_IFCHR:  printf("c"); break;
-        case S_IFBLK:  printf("b"); break;
-        case S_IFLNK:  printf("l"); break;
-        case S_IFIFO:  printf("p"); break;
-        case S_IFSOCK: printf("s"); break;
-        default:       printf("?"); break; /* Should never happen (on Linux) */
+        case S_IFREG:  fileMod = '-'; break;
+        case S_IFDIR:  fileMod = 'd'; break;
+        case S_IFCHR:  fileMod = 'c'; break;
+        case S_IFBLK:  fileMod = 'b'; break;
+        case S_IFLNK:  fileMod = 'l'; break;
+        case S_IFIFO:  fileMod = 'p'; break;
+        case S_IFSOCK: fileMod = 's'; break;
+        default:       fileMod = '?'; break; /* Should never happen (on Linux) */
         }
     }
+    printf("%c",fileMod);
 
-    if (type != FTW_NS)
-        printf("%7ld ", (long) sbuf->st_ino);
-    else
+    // if (type != FTW_NS)
+    //     printf("%7ld ", (long) sbuf->st_ino);
+    // else
         printf("        ");
+
 	
     printf(" %*s", 4 * ftwb->level, " ");         /* Indent suitably */
     printf("%s\n",  &pathname[ftwb->base]);     /* Print basename */
     return 0;                                   /* Tell nftw() to continue */
 }
 
-int
-main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
     int flags = 0;
-    if (argc != 2) {
+    if (argc != 2) 
+    {
         fprintf(stderr, "Usage: %s directory-path\n", argv[0]);
         exit(EXIT_FAILURE);
     }
