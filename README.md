@@ -4,6 +4,9 @@
 
 This program displays a directory tree starting from a specified directory path. It prints information about each directory and file encountered, including permissions, owner, group, and size. Additionally, it counts the total number of directories and files encountered and displays the count at the end of the traversal.
 
+![image](https://github.com/SappirBo/AP_Tree/assets/92790326/bd6ebedf-96d4-428a-bd0f-b04125b38d60)
+
+
 ## How To Use
 
 
