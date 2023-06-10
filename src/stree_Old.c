@@ -120,14 +120,10 @@ int dirTree(const char *pathname, const struct stat *sbuf, int type, struct FTW 
 
     // Check if the current directory's path matches the parent directory's path
     if (parent_path && strncmp(parent_path, pathname, ftwb->base) == 0) {
-        for (int i = 0; i < (ftwb->level); i++) {
-            if (i < ftwb->level - 1) {
-                printf("%s", EMPTYSPACE);
-            } else {
-                printf("|");
-                printf("%s", DOWNLINE);
-            }
+        for (int i = 0; i < (ftwb->level) - 1; i++) {
+            printf("|    ");
         }
+        printf("|____");
     } else {
         parent_path = pathname;
     }
@@ -135,14 +131,11 @@ int dirTree(const char *pathname, const struct stat *sbuf, int type, struct FTW 
     print_permissions(sbuf);
     print_owner_group(sbuf);
     print_size(sbuf);
-    if(fileMod == 'd')
-    {
+    if (fileMod == 'd') {
         printf(COLOR_BLUE" %s\n", &pathname[ftwb->base]);
         printf(COLOR_RESET "");
         dirCount++;
-    }
-    else 
-    {
+    } else {
         printf(" %s\n", &pathname[ftwb->base]);
         fileCount++;
     }

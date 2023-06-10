@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Werror
+CFLAGS = 
 
 all: ftw1 ftw2 stree
 

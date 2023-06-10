@@ -12,20 +12,31 @@
 #define DEBUG 0
 #define COLOR_BLUE    "\x1b[34m"
 #define COLOR_RESET   "\x1b[0m"
+#define MAX_NUM 512 // Means it goes deep as 512 files 
 
 
 char *EMPTYSPACE = "    ";
 char *DOWNLINE = "____";
 
-static const char *parent_path = NULL;  // Stores the parent directory's path
+// static const char *parent_path = NULL;  // Stores the parent directory's path
 static int dirCount = 0;  // Count of directories
 static int fileCount = 0;  // Count of files
+// Keep track of the deepest level visited in the last iteration.
+static int max_level = -1;
+// Keep track of the deepest level where a child was encountered for each level.
+static int last_child_level[1024] = {-1};
+// Keep track of the previously visited level.
+static int prev_level = -1;
+
+static int number_set[MAX_NUM] = {0};  // All elements initialized to false
 
 
 static void print_permissions(const struct stat *sbuf);
 static void print_size(const struct stat *sbuf);
 static int dirTree(const char *pathname, const struct stat *sbuf, int type, struct FTW *ftwb);
 static void print_owner_group(const struct stat *sbuf);
+static int countSet(const char *pathname, const struct stat *sbuf, int type, struct FTW *ftwb);
+static void printSet();
 
 
 int main(int argc, char *argv[])
@@ -38,6 +49,12 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Usage: %s directory-path\n", argv[0]);
         exit(EXIT_FAILURE);
     }
+
+    if (nftw(argv[1], countSet, 10, flags) == -1) {
+        perror("nftw");
+        exit(EXIT_FAILURE);
+    }
+
 
     if (nftw(argv[1], dirTree, 10, flags) == -1) {
         perror("nftw");
@@ -52,6 +69,21 @@ int main(int argc, char *argv[])
     printf("\n");
 
     exit(EXIT_SUCCESS);
+}
+
+int countSet(const char *pathname, const struct stat *sbuf, int type, struct FTW *ftwb){
+    // printf("------------ Level = %d\n", ftwb->level);
+    number_set[ftwb->level]++;
+    return 0;
+}
+
+void printSet(){
+    for(int i=0; i<MAX_NUM; i++)
+    {
+        if(number_set[i] > 0){
+            printf("number_set[%d] = %d\n",i,number_set[i]);
+        }
+    }
 }
 
 
@@ -92,10 +124,22 @@ void print_size(const struct stat *sbuf)
 
 int dirTree(const char *pathname, const struct stat *sbuf, int type, struct FTW *ftwb)
 {
-#if DEBUG
-    printf("Level: %d, ", ftwb->level);
-    printf("Base: %d ,", ftwb->base);
-#endif
+
+
+    // Update the deepest level.
+    max_level = ftwb->level;
+
+    if(prev_level == ftwb->level && ftwb->level != 0)
+    {
+        prev_level -=1;
+    }
+    else if(prev_level > ftwb->level)
+    {
+        if(prev_level - 2 < 0){prev_level==0;}
+        else{prev_level -= 2;}
+    }
+
+
 
     char fileMod = '-';
     if (type == FTW_NS) {
@@ -114,19 +158,49 @@ int dirTree(const char *pathname, const struct stat *sbuf, int type, struct FTW 
     }
 
 #if DEBUG
+    printf("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n");
+    printf("[DEBUG] ");
+    printf("Level: %d, ", ftwb->level);
+    printf("Base: %d ,", ftwb->base);
     printf("STAT: %c", fileMod);
-    printf(" | ");
+    printf("path: %s", pathname);
+    printf(" | \n");
+    printf("[DEBUG] ");
+    printf("max_level: %d, ", max_level);
+    printf("prev_level: %d, ", prev_level);
+    printf(" | \n");
+    printf("[DEBUG] ");
+    printf("number_set[%d]: %d, ",ftwb->level, number_set[ftwb->level]);
+    printf(" | \n");
+    
 #endif
 
-    // Check if the current directory's path matches the parent directory's path
-    if (parent_path && strncmp(parent_path, pathname, ftwb->base) == 0) {
-        for (int i = 0; i < (ftwb->level) - 1; i++) {
-            printf("|    ");
+    // Only print `|` if the current level is less than the previously visited level.
+    for (int i = 0; i < ftwb->level; i++) {
+        if (i < prev_level +1) {
+            if(i == prev_level){
+                printf("|___");
+            }else{
+                if(number_set[prev_level] > 1){
+                    printf("|   ");
+                }else{
+                    printf("    ");   
+                }    
+            }
+        } else {
+            printf("    ");
         }
-        printf("|____");
-    } else {
-        parent_path = pathname;
     }
+
+    // Update the last child level of the current level.
+    last_child_level[ftwb->level - 1] = max_level;
+    // Update the previously visited level.
+    if(fileMod == 'd'){
+        prev_level = ftwb->level;
+    }
+
+    number_set[ftwb->level]--;
+    
 
     print_permissions(sbuf);
     print_owner_group(sbuf);
